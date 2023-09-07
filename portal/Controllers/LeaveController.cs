@@ -1,82 +1,104 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using portal.Models.Leave;
 using portal.Services;
+using System;
+using System.Collections.Generic;
 
 namespace portal.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class LeaveController : ControllerBase
-    
+    {
+        private readonly LeaveService _leaveService;
 
+        public LeaveController(LeaveService leaveService)
         {
-            private readonly LeaveService _leaveService;
+            _leaveService = leaveService;
+        }
 
-            public LeaveController(LeaveService leaveService)
+        // GET: api/Leave
+        [HttpGet]
+        public ActionResult<IEnumerable<Leave>> GetLeaves()
+        {
+            try
             {
-                _leaveService = leaveService;
-            }
-
-            [HttpGet]
-            public IActionResult GetLeaves()
-            {
-                List<Leave> leaves = _leaveService.GetLeaves();
+                var leaves = _leaveService.GetLeaves();
                 return Ok(leaves);
             }
-
-            [HttpGet("{id}")]
-            public IActionResult GetLeaveById(int id)
+            catch (Exception ex)
             {
-                Leave leave = _leaveService.GetLeaveById(id);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // GET: api/Leave/5
+        [HttpGet("{id}", Name = "GetLeaveById")]
+        public ActionResult<Leave> GetLeaveById(int id)
+        {
+            try
+            {
+                var leave = _leaveService.GetLeaveById(id);
                 if (leave == null)
-                {
-                    return NotFound();
-                }
+                    return NotFound($"Leave with ID {id} not found");
+
                 return Ok(leave);
             }
-
-            [HttpPost]
-            public IActionResult CreateLeave([FromBody] Leave leave)
+            catch (Exception ex)
             {
-                if (leave == null)
-                {
-                    return BadRequest();
-                }
-
-                leave.DateFrom = DateTime.Now; // Set the DateFrom to the current date
-
-                _leaveService.CreateLeave(leave);
-                return CreatedAtAction(nameof(GetLeaveById), new { id = leave.LeaveId }, leave);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
 
-            [HttpPut("{id}")]
-            public IActionResult EditLeave(int id, [FromBody] Leave leave)
+        // POST: api/Leave
+        [HttpPost]
+        public ActionResult<Leave> CreateLeave([FromBody] Leave leave)
+        {
+            try
             {
-                if (leave == null)
-                {
-                    return BadRequest();
-                }
-
-                int result = _leaveService.EditLeave(id, leave);
-                if (result == 0)
-                {
-                    return NoContent();
-                }
-                return NotFound();
+                var createdLeave = _leaveService.CreateLeave(leave);
+                return CreatedAtRoute("GetLeaveById", new { id = createdLeave.LeaveId }, createdLeave);
             }
-
-            [HttpDelete("{id}")]
-            public IActionResult DeleteLeave(int id)
+            catch (Exception ex)
             {
-                int result = _leaveService.DeleteLeave(id);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // PUT: api/Leave/5
+        [HttpPut("{id}")]
+        public ActionResult<Leave> EditLeave(int id, [FromBody] Leave leave)
+        {
+            try
+            {
+                var result = _leaveService.EditLeave(id, leave);
                 if (result == 0)
-                {
-                    return NoContent();
-                }
-                return NotFound();
+                    return NoContent(); // Successfully updated
+                else
+                    return NotFound($"Leave with ID {id} not found");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        // DELETE: api/Leave/5
+        [HttpDelete("{id}")]
+        public ActionResult DeleteLeave(int id)
+        {
+            try
+            {
+                var result = _leaveService.DeleteLeave(id);
+                if (result == 0)
+                    return NoContent(); // Successfully deleted
+                else
+                    return NotFound($"Leave with ID {id} not found");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
     }
-
-
+}

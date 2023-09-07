@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using portal.Models;
+using portal.Services;
 
 namespace portal
 {
@@ -15,6 +16,8 @@ namespace portal
             var configuration = builder.Configuration;
 
             builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("UserDbConnection")));
+
+            builder.Services.AddTransient<LeaveService, LeaveRepo>();
 
 
 
